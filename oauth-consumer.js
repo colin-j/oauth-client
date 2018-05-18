@@ -1,42 +1,100 @@
 #!/usr/bin/env node
 const express = require('express')
-const app = express()
 const fs = require('fs')
+const open = require('open')
 
-var port = 3141
-// url: https://login.salesforce.com/services/oauth2/authorize?response_type=token&client_id=3MVG9zlTNB8o8BA3z5jzVrOzV26AGGOtkWM7Vi4k9aEzUWcc5gLxOJuR5vnSEM0nXdpuntPbEXANIJQqJXh_W&redirect_url=http%3A%2F%2Flocalhost%3A3141%2Fcallback
-//      https://login.salesforce.com/services/oauth2/authorize?response_type=token&client_id=3MVG9rFJvQRVOvk5nd6A4swCycqQ0Hogb20LB7z3ndy1lwwrBb99R3GSl09cTKHNcJhIEAY5ttEAczOfCxPJ5&redirect_uri=http%3A%2F%2Flocalhost%3A3835%2Foauth%2F_callback
-//
+var config = readConfig(process.argv[2])
 
-function logRequest(req) {
-	console.dir({
-		//baseUrl: req.baseUrl,
-		//body: req.body,
-		//cookies: req.cookies,
-		hostname: req.hostname,
-		ip: req.ip,
-		method: req.method,
-		originalUrl: req.originalUrl,
-		params: req.params,
-		path: req.path,
-		proto: req.protocol,
-		query: req.query
-	})
+startConsumerServer()
+openBrowserAuth()
 
+
+function readConfig(configFilename) {
+	if (!configFilename) {
+		configFilename = './config.json'
+	}
+	return JSON.parse(fs.readFileSync(configFilename, { encoding: 'utf8' }))
 }
 
-function handleGet(req, res) {
-	logRequest(req);
-	res.send(fs.readFileSync('oauth.html', { encoding: 'utf8' }));
+function log(msg) {
+	if (config.verbose) {
+		console.log(msg)
+	}
 }
 
-function handlePost(req, res) {
-	console.log('access token: ' + req.query.access_token);
-	logRequest(req)
-	res.sendStatus(200)
+function startConsumerServer() {
+	var app = express()
+	app.get(config.redirectPath, handleGet)
+	app.post(config.redirectPath, handlePost)
+	server = app.listen(config.listenPort)
+
+	function logRequest(req) {
+		log({
+			hostname: req.hostname,
+			ip: req.ip,
+			method: req.method,
+			originalUrl: req.originalUrl,
+			params: req.params,
+			path: req.path,
+			proto: req.protocol,
+			query: req.query
+		})
+
+	}
+
+	function handleGet(req, res) {
+		logRequest(req)
+		res.send(fs.readFileSync('oauth.html', { encoding: 'utf8' }))
+		res.end()
+	}
+
+	function handlePost(req, res) {
+		logRequest(req)
+		console.log(JSON.stringify(req.query, null, '  '))
+		res.sendStatus(200)
+		res.end()
+		shutdown()
+	}
+
+	function shutdown() {
+		// TODO shutdown all open sockets
+		process.exit(0)
+	}
 }
 
-app.get('/*', (req, res) => handleGet(req,res))
-app.post('/*', (req, res) => handlePost(req,res))
+function openBrowserAuth() {
 
-app.listen(port, () => console.log('Example app listening on port ' + port))
+	var params = {
+		response_type: 'token',
+		client_id: config.clientId
+	}
+
+	if (config.sendRedirectUri) {
+		params.redirect_uri = 'http://localhost:' + config.listenPort + config.redirectPath
+	}
+	var url = config.oauthEndpoint + qs(params)
+	console.log('auth url: ' + url)
+	open(url)
+
+	function param(name, val) {
+		var result = encodeURIComponent(name)
+		if (val) {
+			result += '=' + encodeURIComponent(val)
+		}
+		return result
+	}
+
+	function qs(params) {
+		var parts = []
+		for (name in params) {
+			if (params.hasOwnProperty(name)) {
+				parts.push(param(name, params[name]))
+			}
+		}
+		if (parts.length == 0) {
+			return ''
+		}
+		return '?' + parts.join('&')
+	}
+}
+
