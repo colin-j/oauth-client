@@ -2,6 +2,6 @@
 	"listenPort": 7654,
 	"redirectPath": "/oauth/_callback",
 	"oauthEndpoint": "https://bitbucket.org/site/oauth2/authorize",
-	"clientId": "kGA3w73VMwakmPE7G6",
+	"clientId": "XXXXX",
 	"sendRedirectUri": true
 }

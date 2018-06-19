@@ -1,7 +1,14 @@
 #!/usr/bin/env node
+
+/*
+ * This oath client code was taken from the dmc project and modified for my own purposes:
+ * https://github.com/kevinohara80/dmc
+ */
+
 const express = require('express')
 const fs = require('fs')
 const open = require('open')
+
 
 var config = readConfig(process.argv[2])
 

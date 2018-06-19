@@ -2,6 +2,6 @@
 	"listenPort": 3141,
 	"redirectPath": "/callback",
 	"oauthEndpoint": "https://login.salesforce.com/services/oauth2/authorize",
-	"clientId": "3MVG9zlTNB8o8BA3z5jzVrOzV26AGGOtkWM7Vi4k9aEzUWcc5gLxOJuR5vnSEM0nXdpuntPbEXANIJQqJXh_W",
+	"clientId": "XXXXXX",
 	"sendRedirectUri": true
 }
